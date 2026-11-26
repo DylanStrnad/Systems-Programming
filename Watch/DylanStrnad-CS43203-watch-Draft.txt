@@ -1,0 +1,141 @@
+/* CS4-53203: Systems Programming \
+/* Name: Dylan Strnad\
+/* Date: 1/28/26\
+/* watch: Draft.txt\
+\
+\
+\
+/* Template for assignments. */
+
+/* Add your work for this assignment here\ */
+
+
+#include <unistd.h>
+#include "utmplib.h"
+#include	<stdio.h>
+#include	<sys/types.h>
+#include	<utmp.h>
+#include <string.h>
+#include <stdbool.h>
+#include <stdlib.h>
+
+
+
+bool show_info(struct utmp *, char*);
+void showtime(time_t);
+
+struct user{
+	bool loggedIn;
+	bool prevLoggedIn;
+};
+
+int main(int argc, char* argv[]){
+
+	int n = atoi(argv[1]); // assign default loop timer
+
+	if(n == 0){ //if no argument, assign default
+		n = 10;
+	}
+
+	struct user users[argc];
+
+	//store log in info, used for printing logic
+	for (int i = 0; i < argc; ++i) {
+		users[i].loggedIn = false;
+		users[i].prevLoggedIn = false;
+	}
+
+	bool firstLoop = true; //first time printing is different than the following times
+	while(true){
+
+		struct utmp	*utbufp,	/* holds pointer to next rec	*/
+			*utmp_next();	/* returns pointer to next	*/
+
+		utmp_open(UTMP_FILE);
+
+		for (int i = 0; i < argc; ++i) { 
+			users[i].loggedIn = false; //r eassign login to false
+		}
+
+
+		while ( ( utbufp = utmp_next() ) != ((struct utmp *) NULL) ){
+			int i = 1;
+			while(argv[i] != NULL){
+				show_info( utbufp, argv[i] );
+				if(show_info(utbufp, argv[i])){ // checks if users name is found
+					users[i].loggedIn = true;	// if so, sets status to logged in
+					break;
+				}
+				++i;
+			}
+		}
+
+		//printing logic
+		for(int i = 1; i < argc && argv[i] != NULL; ++i){
+			if(users[i].loggedIn && !users[i].prevLoggedIn && firstLoop){
+				users[i].prevLoggedIn = true;
+				printf("%s currently logged in \n", argv[i]);
+			}else if (users[i].loggedIn && !users[i].prevLoggedIn){
+				users[i].prevLoggedIn = true;
+				printf("%s logged in \n", argv[i]);
+			} else if(!users[i].loggedIn && users[i].prevLoggedIn){
+				users[i].prevLoggedIn = false;
+				printf("%s logged out \n", argv[i]);
+			} else{
+				fflush(stdout);
+			}
+		}
+		
+		firstLoop = false;
+
+		sleep(n);
+
+		utmp_close( );
+	}
+    
+    return 0;
+}
+
+//if name is an argument,
+//  and argument does not exist on utbufp => print that the user logged out
+
+bool show_info( struct utmp *utbufp, char* name )
+{
+	if ( utbufp->ut_type != USER_PROCESS)
+		return false;
+
+    if(strncmp(utbufp->ut_name, name, sizeof(utbufp->ut_name)) != 0 ){
+        
+        return false;
+    }
+
+	// printf("%-8.8s", utbufp->ut_name);		/* the logname	*/
+	// printf(" ");					/* a space	*/
+	// printf("%-8.8s", utbufp->ut_line);		/* the tty	*/
+	// printf(" ");					/* a space	*/
+	// showtime( utbufp->ut_time );			/* display time	*/
+	return true;
+#ifdef SHOWHOST
+	if ( utbufp->ut_host[0] != '\0' )
+		printf(" (%s)", utbufp->ut_host);	/* the host	*/
+#endif
+	printf("\n");					/* newline	*/
+}
+
+void showtime( time_t timeval )
+/*
+ *	displays time in a format fit for human consumption
+ *	uses ctime to build a string then picks parts out of it
+ *      Note: %12.12s prints a string 12 chars wide and LIMITS
+ *      it to 12chars.
+ */
+{
+	char	*ctime();		/* convert long to ascii	*/
+	char	*cp;			/* to hold address of time	*/
+
+	cp = ctime( &timeval );		/* convert time to string	*/
+					/* string looks like		*/
+					/* Mon Feb  4 00:46:40 EST 1991 */
+					/* 0123456789012345.		*/
+	printf("%12.12s", cp+4 );	/* pick 12 chars from pos 4	*/
+}

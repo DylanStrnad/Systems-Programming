@@ -1,0 +1,57 @@
+/* CS4-53203: Systems Programming \
+/* Name: Dylan Strnad\
+/* Date:1/21/2026
+/* StrnadDylan-CS43203-who4.txt\
+\
+\
+\
+
+/* who4.c - who with buffered reads
+*  Identity crisis: The manual page for who lists who   am   i as an acceptable *usage of     *   the command. It also lists whoami. Modify who2.c so it supports the who am i *usage. 
+*   Experiment with the command whom and read the manage. How does it differ from who    
+*   am i ? write a program that works like whoami.
+*/
+
+// System calls in unix command: read(), write(), open(), close()
+
+// Who outputs all users logged into the system, as well as data and time. While who am i outputs the user name associated with the current effective user ID.
+
+
+
+/* who4.c  - read /etc/utmp and list info therein
+ *         - suppresses empty records
+ *         - formats time nicely
+ */
+#include        <stdio.h>
+#include        <unistd.h>
+#include        <utmp.h>
+#include        <fcntl.h>
+#include        <time.h>
+
+#include <sys/types.h>
+#include <pwd.h>
+
+
+/* #define      SHOWUSRNAME	*/
+
+int main()
+{
+        uid_t uid = geteuid();
+        struct passwd *pw = getpwuid(uid); // gets user data
+        show_info( pw ); //used to print your user name
+        return 0;
+}
+/*
+ *      show info()
+ *                   
+ *                      * displays nothing if user not found
+ */
+void show_info( struct passwd *pw )
+{
+        if(pw == NULL){ //user not found
+                return;
+        } else
+                puts (pw->pw_name);
+        
+}
+

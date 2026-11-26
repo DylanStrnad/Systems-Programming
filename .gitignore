@@ -1,0 +1,9 @@
+*.o
+*.pdb
+*.ilk
+*.exe
+*.zip
+*.rar
+.vs/
+.vscode/
+__MACOSX/
